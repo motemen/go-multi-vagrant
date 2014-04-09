@@ -4,18 +4,22 @@ ALL_MACHINES = YAML.load_file('machines.yaml').keys.join(' ')
 
 task :default => [:init, 'vagrant:make']
 
+desc 'Initialize required tools (required once, a bit slow)'
 task :init do
   sh 'vagrant', 'plugin', 'install', 'vagrant-omnibus'
 end
 
+desc 'Setup required libraries'
 task :setup do
   sh 'bundle', 'install', '--quiet'
   sh 'bundle', 'exec', 'berks', 'install', '--path=.vendor/cookbooks'
 end
 
 namespace :vagrant do
+  desc 'Run make on virtual machines'
   task :make, [:machine, :target] => [:up, :make_fast]
 
+  desc 'Start virtual machines'
   task :up, [:machine] => [:setup] do |t,args|
     prepare_args! args
     args.machines.each do |machine|
@@ -23,6 +27,7 @@ namespace :vagrant do
     end
   end
 
+  desc 'Run make without starting up machines'
   task :make_fast, [:machine, :target] do |t,args|
     prepare_args! args
     threads = args.machines.map do |machine|
@@ -35,6 +40,7 @@ namespace :vagrant do
     threads.each { |t| t.join }
   end
 
+  desc 'Watch local files to invoke make on virtual machines'
   task :watch, [:machine, :target] do |t,args|
     require 'listen'
     require 'pathname'
